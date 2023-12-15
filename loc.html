@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LOC-Based Estimation</title>
+  <style>
+    body {
+      font-family:'Courier New', monospace;
+      background-color: #80ced6;
+      background-image: url("man.jpeg");
+      height: 100%;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    label {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    input {
+      width: 100px;
+      text-align: center;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: grey;
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>LOC-Based Estimation</h2>
+    <label for="num-activities">Number of Modules:</label>
+    <input type="number" id="num-activities" required><br><br><br>
+    <div id="activity-fields"></div>
+    <label for="average-productivity">Average Productivity (LOC/person-month):</label>
+    <input type="number" id="average-productivity" step="0.01" required><br><br><br>
+    <label for="labour-rate">Labour Rate ($/hour):</label>
+    <input type="number" id="labour-rate" step="0.01" required><br><br><br><br>
+    <button id="calculate-btn">Calculate</button>
+    <div id="result" style="display: none;">
+      <h3>Estimation Result</h3>
+      <p>Duration of Project: <span id="estimated-effort"></span> person-months</p>
+      <p>Cost: $<span id="estimated-cost"></span></p>
+    </div>
+  </div>
+  <script>
+    const calculateBtn = document.getElementById("calculate-btn");
+    calculateBtn.addEventListener("click", calculateLOC);
+
+    function createActivityInputs(numActivities) {
+      const activityFields = document.getElementById("activity-fields");
+      activityFields.innerHTML = "";
+
+      for (let i = 0; i < numActivities; i++) {
+        const activityField = document.createElement("div");
+        activityField.innerHTML = `
+          <h4>Module ${i + 1}:</h4>
+          <label for="optimistic-${i}">Optimistic Time:</label>
+          <input type="number" id="optimistic-${i}" step="0.01" required><br><br>
+          <label for="most-likely-${i}">Most Likely Time:</label>
+          <input type="number" id="most-likely-${i}" step="0.01" required><br><br>
+          <label for="pessimistic-${i}">Pessimistic Time:</label>
+          <input type="number" id="pessimistic-${i}" step="0.01" required><br><br><br>
+        `;
+        activityFields.appendChild(activityField);
+      }
+    }
+
+    function calculateLOC() {
+      const numActivities = parseInt(document.getElementById("num-activities").value);
+      const avgProductivity = parseFloat(document.getElementById("average-productivity").value);
+      const labourRate = parseFloat(document.getElementById("labour-rate").value);
+
+      let totalExpectedEffort = 0.0;
+
+      for (let i = 0; i < numActivities; i++) {
+        const optimistic = parseFloat(document.getElementById(`optimistic-${i}`).value);
+        const mostLikely = parseFloat(document.getElementById(`most-likely-${i}`).value);
+        const pessimistic = parseFloat(document.getElementById(`pessimistic-${i}`).value);
+
+        const expectedEffort = Math.ceil((optimistic + 4 * mostLikely + pessimistic) / 6);
+        totalExpectedEffort += expectedEffort;
+      }
+
+      const estimatedEffort = Math.ceil(totalExpectedEffort / avgProductivity);
+      const estimatedCost = estimatedEffort *labourRate; // Assuming 160 hours per month
+
+      const resultDiv = document.getElementById("result");
+      resultDiv.style.display = "block";
+      document.getElementById("estimated-effort").textContent = Math.ceil(estimatedEffort);
+      document.getElementById("estimated-cost").textContent = Math.ceil(estimatedCost);
+    }
+
+    const numActivitiesInput = document.getElementById("num-activities");
+    numActivitiesInput.addEventListener("input", function () {
+      const numActivities = parseInt(numActivitiesInput.value);
+      createActivityInputs(numActivities);
+    });
+  </script>
+</body>
+</html>
